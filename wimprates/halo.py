@@ -9,7 +9,7 @@ from scipy.special import erf
 from scipy.integrate import dblquad
 from scipy.interpolate import CubicSpline
 from scipy.fft import rfft
-import wimpratesMod as wr
+import wimprates as wr
 export, __all__ = wr.exporter()
 
 

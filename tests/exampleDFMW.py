@@ -1,4 +1,4 @@
-import wimpratesMod as wp
+import wimprates as wp
 import numpy as np
 import matplotlib.pyplot as plt
 import numericalunits as nu

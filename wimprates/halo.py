@@ -153,7 +153,7 @@ def observed_speed_dist(v, t=None, v_0=None, v_esc=None):
     v_esc = _HALO_DEFAULTS['v_esc'] * nu.km/nu.s if v_esc is None else v_esc
     v_earth_t = v_earth(t, v_0=v_0)
 
-    # Normalization constant, corrected
+    # Normalization constant,see Lewin&Smith appendix 1a (now corrected)
     _w = v_esc/v_0
     k = erf(_w) - 2/np.pi**0.5 * _w * np.exp(-_w**2)  # unitless
 

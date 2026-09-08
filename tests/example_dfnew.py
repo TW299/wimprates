@@ -59,7 +59,7 @@ try:
     from ConfigParser import RawConfigParser  # python 2
 except ImportError:
     from configparser import RawConfigParser  # python 3
-iniFileName = "../wimprates/data/dataPot/SCM_MW.ini"
+iniFileName = "../wimprates/data/dataMW1/SCM_MW.ini"
 ini = RawConfigParser()
 ini.optionxform=str  # do not convert key to lowercase
 ini.read(iniFileName)
@@ -70,7 +70,7 @@ dfDarkHalo    = createNewDoublePowerLawDF(**iniDFDarkHalo)
 #height of sun
 zsol=0.025
 #total Potential
-potTot=agama.Potential("../wimprates/data/dataPot/mwmodel_potential.ini")
+potTot=agama.Potential("../wimprates/data/dataMW1/mwmodel_potential.ini")
 #action finder
 af=agama.ActionFinder(potTot)
 #DM density- does not affect rate calculation in Msun/kpc^3

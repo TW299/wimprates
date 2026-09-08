@@ -20,7 +20,7 @@ etrue_centers = np.geomspace(0.1,1000,400)
 mw = 1000
 t=59.37
 #see example_dfnew.py to see how to write files like this
-halo_modelnew=wp.HaloModelInterpolatedFromFile(Filename="../wimprates/data/dataPot/FourCoef.txt",
+halo_modelnew=wp.HaloModelInterpolatedFromFile(Filename="../wimprates/data/dataMW1/FourCoef.txt",
                                                rho_dm=DMdens*nu.Msolar/nu.kpc**3)
 t=59.37
 for color, target in zip(["crimson","darkorange","darkgreen","cyan"],["Xe","Ge","Ar","Si"]):

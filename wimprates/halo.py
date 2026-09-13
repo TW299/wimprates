@@ -283,7 +283,8 @@ This way you do not need to calculate the distribution fucntion every time you r
 distF is the distribution function in the galactic frame f(vR,vz,vphi), normalised so the integral over velocity is one.
 v_0 is the circular speed at the Sun's location and v_esc is the escape velocity at the sun.
 N is the number of points to evaluate, epsrel is the relative accuracy of the double itnegration
-Nf is the number of fourier coefficients in time (so that Nf//2+1 is the maximum n).
+Nf is the number of evaluations in time (so that Nf//2 is maximum fourier coefficient).
+File is written speed v in km/s, and then the fourier coefficients in units of s/km. Negative m signifies sine series, and non negative cosine series.
 '''
 @export
 def writeFourcoefs(distF,Filename="FourCoefs.txt",v_0=None,v_esc=None,N=100,epsrel=1e-2,Nf=5):
@@ -294,16 +295,24 @@ def writeFourcoefs(distF,Filename="FourCoefs.txt",v_0=None,v_esc=None,N=100,epsr
     vvec=np.linspace(0,vmax,N)
     T=365.25
     Nfc=Nf//2+1
-    fv=np.zeros((Nf,len(vvec)))
+    fv=np.zeros((len(vvec),Nf))
     for j in range(Nf):
         t1=j/Nf*T
-        fv[j,:]=observed_speed_distfromdf(
-                vvec,t=t1,distF=distF,v_0=v_01,v_esc=v_esc1,epsrel=epsrel)*nu.km/nu.s
-    a=np.zeros((Nfc,len(vvec)))*(1+1j)
+        fv[:,j]=observed_speed_distfromdf(vvec,t=t1,distF=distF,v_0=v_01,v_esc=v_esc1,epsrel=epsrel)*nu.km/nu.s
+    a=np.zeros((len(vvec),2*Nfc-1))
+    TxtHead="Fourier coefficients with time of DM speed distribution\n v(km/s) m"
+    for j in range(2*Nfc-1):
+        if j<Nfc:
+            TxtHead+=" "+str(-(Nfc-j-1))
+        else:
+            TxtHead+=" "+str(j-Nfc+1)
     for i in range(len(vvec)):
-        complA=rfft(fv[:,i])
-        a[:,i]=1/Nf*complA
-    np.savetxt(Filename,np.concatenate((np.array([vvec])*nu.s/nu.km,a)).T)
+        complA=rfft(fv[i,:])
+        a[i,Nfc-1]=complA[0].real/Nf
+        for j in range(Nfc-1):
+            a[i,j+Nfc]=1/Nf*complA[j+1].real
+            a[i,Nfc-j-2]=1/Nf*complA[j+1].imag
+    np.savetxt(Filename,np.concatenate((np.array([vvec*nu.s/nu.km]).T,a),axis=1),header=TxtHead)
 @export
 class HaloModelInterpolated:
     """
@@ -395,6 +404,8 @@ class HaloModelInterpolatedFromFile:
             res=Acompl[0].real
             for i in range(1,self.Nt-1):
                 res+=2*(np.cos(i*th)*Acompl[i].real-np.sin(i*th)*Acompl[i].imag)
+            if(res<0):
+                res=0
             return res
         else:
             result=np.zeros(len(v))
@@ -406,4 +417,6 @@ class HaloModelInterpolatedFromFile:
                     result[i]=Acompl[0].real
                     for j in range(1,self.Nt):
                         result[i]+=2*(np.cos(j*th)*Acompl[j].real-np.sin(j*th)*Acompl[j].imag)
+                    if result[i]<0:
+                        result[i]=0
             return result

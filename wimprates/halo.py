@@ -333,17 +333,19 @@ class HaloModelInterpolated:
         speedpec=np.sum((np.array(_HALO_DEFAULTS['v_pec']))**2)**0.5 * nu.km/nu.s
         vmax=self.v_esc+self.v_0+speedpec
         vvec=np.linspace(0,vmax,N)
+        self.vvec=vvec
         T=365.25
         Nfc=Nf//2+1
         fv=np.zeros((Nf,len(vvec)))*(1+1j)
         for j in range(Nf):
             t1=j/Nf*T
             fv[j,:]=observed_speed_distfromdf(vvec,t=t1,distF=distF,v_0=v_0,v_esc=v_esc,epsrel=epsrel)
-        a=np.zeros((Nfc,len(vvec)))*(1+1j)
+        a=np.zeros((len(vvec),Nfc))*(1+1j)
         for i in range(len(vvec)):
             complA=rfft(fv[:,i].real)
-            a[:,i]=1/Nf*complA
-        self.interpola=CubicSpline(vvec,a.T)
+            a[i,:]=1/Nf*complA
+        self.a=a
+        self.interpola=CubicSpline(vvec,a)
         self.Nt=Nfc
         self.T=T
     def velocity_dist(self,v,t):
@@ -371,6 +373,20 @@ class HaloModelInterpolated:
                     for j in range(1,self.Nt):
                         result[i]+=2*(np.cos(j*th)*Acompl[j].real-np.sin(j*th)*Acompl[j].imag)
             return result
+    def write_to_file(self,Filename="FourCoefs.txt"):
+        TxtHead="Fourier coefficients with time of DM speed distribution\n v(km/s) m"
+        for j in range(2*self.Nt-1):
+            if j<self.Nt:
+                TxtHead+=" "+str(-(self.Nt-j-1))
+            else:
+                TxtHead+=" "+str(j-self.Nt+1)
+        a=np.zeros((len(self.vvec),2*self.Nt-1))
+        for i in range(len(self.vvec)):
+            a[i,self.Nt-1]=self.a[i,0].real*nu.km/nu.s
+            for j in range(self.Nt-1):
+                a[i,j+self.Nt]=self.a[i,j+1].real*nu.km/nu.s
+                a[i,self.Nt-j-2]=self.a[i,j+1].imag*nu.km/nu.s
+        np.savetxt(Filename,np.concatenate((np.array([self.vvec*nu.s/nu.km]).T,a),axis=1),header=TxtHead)
 @export
 class HaloModelInterpolatedFromFile:
     """
@@ -385,12 +401,15 @@ class HaloModelInterpolatedFromFile:
         self.rho_dm=_HALO_DEFAULTS['rho_dm'] * nu.GeV/nu.c0**2 / nu.cm**3 if rho_dm is None else rho_dm
         T=365.25
         self.T=T
-        va=np.loadtxt(Filename,dtype=np.complex128)
+        va=np.loadtxt(Filename)
         vvec=va[:,0].real*nu.km/nu.s
-        Nf=np.shape(va)[1]-1
-        a=va[:,1:Nf+1]*nu.s/nu.km
+        Nfc=(np.shape(va)[1]+1)//2
+        a=np.ones((len(vvec),Nfc))*(1+1j)
+        a[:,0]=va[:,Nfc]*nu.s/nu.km
+        for j in range(Nfc-1):
+            a[:,j+1]=(va[:,j+Nfc+1]+va[:,Nfc-j-1]*1j)*nu.s/nu.km
         self.interpola=CubicSpline(vvec,a)
-        self.Nt=Nf
+        self.Nt=Nfc
     def velocity_dist(self,v,t):
         t=59.37 if t is None else t
         th=2*np.pi/self.T*t
